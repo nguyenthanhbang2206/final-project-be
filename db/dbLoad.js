@@ -21,15 +21,20 @@ async function dbLoad() {
   await Photo.deleteMany({});
   await SchemaInfo.deleteMany({});
 
+  const bcrypt = require("bcryptjs");
   const userModels = models.userListModel();
   const mapFakeId2RealId = {};
   for (const user of userModels) {
-    userObj = new User({
-      first: user.first_name,
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash("weak", salt);
+    const userObj = new User({
+      first_name: user.first_name,
       last_name: user.last_name,
       location: user.location,
       description: user.description,
       occupation: user.occupation,
+      login_name: user.last_name.toLowerCase(),
+      password: hashedPassword,
     });
     try {
       await userObj.save();
