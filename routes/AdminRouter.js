@@ -8,7 +8,9 @@ router.post("/login", async (request, response) => {
   const { login_name, password } = request.body;
 
   if (!login_name || !password) {
-    return response.status(400).json({ error: "Login name and password are required" });
+    return response
+      .status(400)
+      .json({ error: "Login name and password are required" });
   }
 
   try {
@@ -26,14 +28,14 @@ router.post("/login", async (request, response) => {
     const token = jwt.sign(
       { userId: user._id, login_name: user.login_name },
       process.env.JWT_SECRET || "secret_key",
-      { expiresIn: "1h" }
+      { expiresIn: "30d" },
     );
 
     response.json({
       _id: user._id,
       first_name: user.first_name,
       last_name: user.last_name,
-      token: token
+      token: token,
     });
   } catch (error) {
     console.error("Login error:", error);
