@@ -4,22 +4,22 @@ const bcrypt = require("bcryptjs");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
-router.get("/list", authMiddleware, async (request, response) => {
+router.get("/list", authMiddleware, async (req, res) => {
   try {
     const users = await User.find({}).select("_id first_name last_name");
-    response.json(users);
+    res.json(users);
   } catch (error) {
-    response.status(500).json({ error: "Failed to fetch user list" });
+    res.status(500).json({ error: "Failed to fetch user list" });
   }
 });
 
 
-router.get("/:id", authMiddleware, async (request, response) => {
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const userId = request.params.id;
+    const userId = req.params.id;
 
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      return response.status(400).json({ error: "Invalid user ID format" });
+      return res.status(400).json({ error: "Invalid user ID format" });
     }
 
     const user = await User.findById(userId).select(
@@ -27,26 +27,26 @@ router.get("/:id", authMiddleware, async (request, response) => {
     );
 
     if (!user) {
-      return response.status(400).json({ error: "User not found" });
+      return res.status(400).json({ error: "User not found" });
     }
 
-    response.json(user);
+    res.json(user);
   } catch (error) {
-    response.status(400).json({ error: "Invalid user ID" });
+    res.status(400).json({ error: "Invalid user ID" });
   }
 });
 
-router.post("/", async (request, response) => {
-  const { login_name, password, first_name, last_name, location, description, occupation } = request.body;
+router.post("/", async (req, res) => {
+  const { login_name, password, first_name, last_name, location, description, occupation } = req.body;
 
   if (!login_name || !password || !first_name || !last_name) {
-    return response.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
     const existingUser = await User.findOne({ login_name });
     if (existingUser) {
-      return response.status(400).json({ error: "Login name already exists" });
+      return res.status(400).json({ error: "Login name already exists" });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -64,7 +64,7 @@ router.post("/", async (request, response) => {
 
     await newUser.save();
 
-    response.json({
+    res.json({
       _id: newUser._id,
       login_name: newUser.login_name,
       first_name: newUser.first_name,
@@ -72,8 +72,50 @@ router.post("/", async (request, response) => {
     });
   } catch (error) {
     console.error("Registration error:", error);
-    response.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// EDIT USER
+router.put("/me", authMiddleware, async (req, res) => {
+  const {
+    first_name,
+    last_name,
+    location,
+    description,
+    occupation,
+  } = req.body;
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.userId,
+      {
+        first_name,
+        last_name,
+        location,
+        description,
+        occupation,
+      },
+      {
+        new: true,
+      },
+    ).select(
+      "_id first_name last_name location description occupation login_name",
+    );
+
+    if (!updatedUser) {
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Update user error:", error);
+
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
 module.exports = router;

@@ -4,11 +4,11 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const router = express.Router();
 
-router.post("/login", async (request, response) => {
-  const { login_name, password } = request.body;
+router.post("/login", async (req, res) => {
+  const { login_name, password } = req.body;
 
   if (!login_name || !password) {
-    return response
+    return res
       .status(400)
       .json({ error: "Login name and password are required" });
   }
@@ -17,12 +17,12 @@ router.post("/login", async (request, response) => {
     const user = await User.findOne({ login_name });
 
     if (!user) {
-      return response.status(400).json({ error: "Invalid login name" });
+      return res.status(400).json({ error: "Invalid login name" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return response.status(400).json({ error: "Incorrect password" });
+      return res.status(400).json({ error: "Incorrect password" });
     }
 
     const token = jwt.sign(
@@ -31,7 +31,7 @@ router.post("/login", async (request, response) => {
       { expiresIn: "30d" },
     );
 
-    response.json({
+    res.json({
       _id: user._id,
       first_name: user.first_name,
       last_name: user.last_name,
@@ -39,12 +39,12 @@ router.post("/login", async (request, response) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    response.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/logout", (request, response) => {
-  response.json({ message: "Logged out successfully" });
+router.post("/logout", (req, res) => {
+  res.json({ message: "Logged out successfully" });
 });
 
 module.exports = router;
