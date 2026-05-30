@@ -13,7 +13,6 @@ router.get("/list", authMiddleware, async (req, res) => {
   }
 });
 
-
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const userId = req.params.id;
@@ -37,7 +36,15 @@ router.get("/:id", authMiddleware, async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { login_name, password, first_name, last_name, location, description, occupation } = req.body;
+  const {
+    login_name,
+    password,
+    first_name,
+    last_name,
+    location,
+    description,
+    occupation,
+  } = req.body;
 
   if (!login_name || !password || !first_name || !last_name) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -59,7 +66,7 @@ router.post("/", async (req, res) => {
       last_name,
       location,
       description,
-      occupation
+      occupation,
     });
 
     await newUser.save();
@@ -68,7 +75,7 @@ router.post("/", async (req, res) => {
       _id: newUser._id,
       login_name: newUser.login_name,
       first_name: newUser.first_name,
-      last_name: newUser.last_name
+      last_name: newUser.last_name,
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -76,46 +83,5 @@ router.post("/", async (req, res) => {
   }
 });
 
-// EDIT USER
-router.put("/me", authMiddleware, async (req, res) => {
-  const {
-    first_name,
-    last_name,
-    location,
-    description,
-    occupation,
-  } = req.body;
 
-  try {
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.userId,
-      {
-        first_name,
-        last_name,
-        location,
-        description,
-        occupation,
-      },
-      {
-        new: true,
-      },
-    ).select(
-      "_id first_name last_name location description occupation login_name",
-    );
-
-    if (!updatedUser) {
-      return res.status(400).json({
-        error: "User not found",
-      });
-    }
-
-    res.json(updatedUser);
-  } catch (error) {
-    console.error("Update user error:", error);
-
-    res.status(500).json({
-      error: "Internal server error",
-    });
-  }
-});
 module.exports = router;
